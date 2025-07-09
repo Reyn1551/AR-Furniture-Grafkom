@@ -11,20 +11,68 @@ function App() {
 
   let scene, camera, renderer;
 
-  let models = [
-    "./armchair.glb",
-    "./dylan_armchair_yolk_yellow.glb",
-    "./marble_coffee_table.glb",
-    "./flippa_functional_coffee_table_w._storagewalnut.glb",
-    "./frame_armchairpetrol_velvet_with_gold_frame.glb",
-    "./elnaz_nesting_side_tables_brass__green_marble.glb",
+  let items = [
+    {
+      model: "./armchair.glb",
+      scale: 0.01,
+      info: {
+        nama: "Kursi Santai",
+        harga: "Rp 1.500.000",
+        bahan: "Kayu dan Kain",
+      },
+    },
+    {
+      model: "./dylan_armchair_yolk_yellow.glb",
+      scale: 0.01,
+      info: {
+        nama: "Kursi Dylan Kuning",
+        harga: "Rp 2.000.000",
+        bahan: "Kain Beludru",
+      },
+    },
+    {
+      model: "./marble_coffee_table.glb",
+      scale: 0.01,
+      info: {
+        nama: "Meja Kopi Marmer",
+        harga: "Rp 3.500.000",
+        bahan: "Marmer dan Logam",
+      },
+    },
+    {
+      model: "./flippa_functional_coffee_table_w._storagewalnut.glb",
+      scale: 0.01,
+      info: {
+        nama: "Meja Kopi Fungsional",
+        harga: "Rp 2.800.000",
+        bahan: "Kayu Walnut",
+      },
+    },
+    {
+      model: "./frame_armchairpetrol_velvet_with_gold_frame.glb",
+      scale: 0.01,
+      info: {
+        nama: "Kursi Bingkai Emas",
+        harga: "Rp 4.000.000",
+        bahan: "Beludru dan Logam Emas",
+      },
+    },
+    {
+      model: "./elnaz_nesting_side_tables_brass__green_marble.glb",
+      scale: 0.01,
+      info: {
+        nama: "Meja Samping Elnaz",
+        harga: "Rp 2.200.000",
+        bahan: "Marmer Hijau dan Kuningan",
+      },
+    },
   ];
-  let modelScaleFactor = [0.01, 0.01, 0.01, 0.01, 0.01, 0.01];
-  let items = [];
+  let loadedModels = [];
   let itemSelectedIndex = 0;
 
   let controller;
 
+  shuffleArray(items);
   init();
   setupFurnitureSelection();
   animate();
@@ -82,11 +130,11 @@ function App() {
     arButton.style.bottom = "20%";
     document.body.appendChild(arButton);
 
-    for (let i = 0; i < models.length; i++) {
+    for (let i = 0; i < items.length; i++) {
       const loader = new GLTFLoader();
-      loader.load(models[i], function (glb) {
+      loader.load(items[i].model, function (glb) {
         let model = glb.scene;
-        items[i] = model;
+        loadedModels[i] = model;
       });
     }
 
@@ -105,21 +153,31 @@ function App() {
 
   function onSelect() {
     if (reticle.visible) {
-      let newModel = items[itemSelectedIndex].clone();
+      let newModel = loadedModels[itemSelectedIndex].clone();
       newModel.visible = true;
-      // this one will set the position but not the rotation
-      // newModel.position.setFromMatrixPosition(reticle.matrix);
-
-      // this will set the position and the rotation to face you
       reticle.matrix.decompose(
         newModel.position,
         newModel.quaternion,
         newModel.scale
       );
-      let scaleFactor = modelScaleFactor[itemSelectedIndex];
+      let scaleFactor = items[itemSelectedIndex].scale;
       newModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
-
       scene.add(newModel);
+
+      const info = items[itemSelectedIndex].info;
+      const infoDiv = document.createElement("div");
+      infoDiv.className = "info-box";
+      infoDiv.innerHTML = `<h3>${info.nama}</h3><p>Harga: ${info.harga}</p><p>Bahan: ${info.bahan}</p>`;
+      document.body.appendChild(infoDiv);
+
+      // Position the info box near the model
+      const screenPosition = toScreenPosition(newModel, camera);
+      infoDiv.style.left = `${screenPosition.x}px`;
+      infoDiv.style.top = `${screenPosition.y}px`;
+
+      setTimeout(() => {
+        infoDiv.remove();
+      }, 5000); // Remove after 5 seconds
     }
   }
 
@@ -127,7 +185,7 @@ function App() {
     itemSelectedIndex = index;
 
     // remove image selection from others to indicate unclicked
-    for (let i = 0; i < models.length; i++) {
+    for (let i = 0; i < items.length; i++) {
       const el = document.querySelector(`#item` + i);
       el.classList.remove("clicked");
     }
@@ -136,7 +194,7 @@ function App() {
   };
 
   function setupFurnitureSelection() {
-    for (let i = 0; i < models.length; i++) {
+    for (let i = 0; i < items.length; i++) {
       const el = document.querySelector(`#item` + i);
       el.addEventListener("beforexrselect", (e) => {
         e.preventDefault();
@@ -145,9 +203,35 @@ function App() {
       el.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        onClicked(e, items[i], i);
+        onClicked(e, loadedModels[i], i);
       });
     }
+  }
+
+  function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+  }
+
+  function toScreenPosition(obj, camera) {
+    var vector = new THREE.Vector3();
+
+    var widthHalf = 0.5 * renderer.getContext().canvas.width;
+    var heightHalf = 0.5 * renderer.getContext().canvas.height;
+
+    obj.updateMatrixWorld();
+    vector.setFromMatrixPosition(obj.matrixWorld);
+    vector.project(camera);
+
+    vector.x = vector.x * widthHalf + widthHalf;
+    vector.y = -(vector.y * heightHalf) + heightHalf;
+
+    return {
+      x: vector.x,
+      y: vector.y,
+    };
   }
 
   function animate() {
