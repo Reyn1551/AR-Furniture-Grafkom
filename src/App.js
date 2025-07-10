@@ -12,15 +12,15 @@ function App() {
   let scene, camera, renderer;
 
   let items = [
-    {
-      model: "./armchair.glb",
-      scale: 0.01,
-      info: {
-        nama: "Kursi Santai",
-        harga: "Rp 1.500.000",
-        bahan: "Kayu dan Kain",
-      },
-    },
+    // {
+    //   model: "./armchair.glb",
+    //   scale: 0.01,
+    //   info: {
+    //     nama: "Kursi Santai",
+    //     harga: "Rp 1.500.000",
+    //     bahan: "Kayu dan Kain",
+    //   },
+    // },
     {
       model: "./dylan_armchair_yolk_yellow.glb",
       scale: 0.01,
